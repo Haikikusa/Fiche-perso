@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#27ae60">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fiche D&D">
+<title>Fiche de personnage</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { background: #1a252f; color: #ecf0f1; font-family: Roboto, Arial, sans-serif; display: flex; align-items: center; justify-content: center; }
+  main { width: min(360px, 92vw); text-align: center; }
+  img { width: 96px; height: 96px; border-radius: 50%; }
+  h1 { font-size: 1.1rem; margin: 12px 0 4px; }
+  p { font-size: 0.8rem; color: #bdc3c7; margin: 0 0 14px; }
+  input[type=password] { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 8px; border: 1px solid #4a5f73; background: #22313f; color: #fff; font-size: 1rem; }
+  button { width: 100%; margin-top: 10px; padding: 11px; border: none; border-radius: 8px; background: #1e8449; color: #fff; font-weight: 800; font-size: 1rem; cursor: pointer; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  label { display: block; font-size: 0.78rem; margin-top: 10px; color: #bdc3c7; }
+  #msg { min-height: 1.2em; margin-top: 10px; font-size: 0.82rem; color: #f5b7b1; }
+</style>
+</head>
+<body>
+<main>
+  <img src="icon-192.png" alt="">
+  <h1>Fiche de personnage</h1>
+  <p>Accès réservé. Saisis la phrase de passe fournie.</p>
+  <form id="f" autocomplete="off">
+    <input type="password" id="mdp" placeholder="Phrase de passe" aria-label="Phrase de passe" autofocus>
+    <label><input type="checkbox" id="souvenir" checked> Se souvenir sur cet appareil</label>
+    <button type="submit" id="ok">Ouvrir la fiche</button>
+  </form>
+  <div id="msg" role="alert"></div>
+</main>
+<script>
+(function () {
+  var CLE = 'fiche_acces';
+  var msg = document.getElementById('msg'), ok = document.getElementById('ok'), champ = document.getElementById('mdp');
+
+  function octets(b64) { var bin = atob(b64.trim()), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
+
+  async function dechiffrer(phrase) {
+    var res = await fetch('fiche.enc', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('fichier');
+    var buf = octets(await res.text());
+    var sel = buf.slice(0, 16), iv = buf.slice(16, 28), donnees = buf.slice(28);
+    var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(phrase), 'PBKDF2', false, ['deriveKey']);
+    var cle = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: sel, iterations: 250000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    var clair = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, cle, donnees);
+    return new TextDecoder().decode(clair);
+  }
+
+  async function ouvrir(phrase, retenir) {
+    ok.disabled = true; msg.textContent = 'Ouverture…';
+    try {
+      var html = await dechiffrer(phrase);
+      if (retenir) { try { localStorage.setItem(CLE, phrase); } catch (e) {} }
+      document.open(); document.write(html); document.close();
+    } catch (e) {
+      ok.disabled = false;
+      var hors = !navigator.onLine;
+      msg.textContent = e && e.message === 'fichier' ? 'Fichier introuvable (connexion ?).' : 'Phrase de passe incorrecte.';
+      try { if (!hors) localStorage.removeItem(CLE); } catch (x) {}
+    }
+  }
+
+  document.getElementById('f').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (champ.value) ouvrir(champ.value, document.getElementById('souvenir').checked);
+  });
+  var gardee = null;
+  try { gardee = localStorage.getItem(CLE); } catch (e) {}
+  if (gardee) ouvrir(gardee, true);
+  if (!window.crypto || !crypto.subtle) msg.textContent = 'Ce navigateur ne permet pas le déchiffrement (https requis).';
+})();
+</script>
+<script>
+  // Hors ligne et mises à jour : même mécanisme que la version ouverte
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js'); });
+  }
+</script>
+</body>
+</html>
