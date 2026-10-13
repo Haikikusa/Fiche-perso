@@ -1,10 +1,16 @@
-// Généré par tools/build-pwa.js — version 20261013231122
-const VERSION = '20261013231122';
+// Généré par tools/build-pwa.js — version 20261013231659
+const VERSION = '20261013231659';
 const CACHE = 'fiche-perso-' + VERSION;
 const FICHIERS = ["./","index.html","manifest.webmanifest","icon-192.png","icon-512.png","apple-touch-icon.png","fiche.enc"];
 
 self.addEventListener('install', e => {
-    e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS)));
+    // cache:'reload' : ne jamais reprendre une ancienne copie du cache HTTP du navigateur (sinon la mise à jour garde l'ancienne fiche)
+    e.waitUntil(caches.open(CACHE).then(c => Promise.all(FICHIERS.map(u =>
+        fetch(new Request(u, { cache: 'reload' })).then(r => {
+            if (!r.ok) throw new Error('Échec ' + u);
+            return c.put(u, r);
+        })
+    ))));
 });
 
 self.addEventListener('activate', e => {
