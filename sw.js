@@ -1,7 +1,7 @@
-// Généré par tools/build-pwa.js — version 20261013214447
-const VERSION = '20261013214447';
+// Généré par tools/build-pwa.js — version 20261013221732
+const VERSION = '20261013221732';
 const CACHE = 'fiche-perso-' + VERSION;
-const FICHIERS = ["./","index.html","manifest.webmanifest","icon-192.png","icon-512.png","fiche.enc"];
+const FICHIERS = ["./","index.html","manifest.webmanifest","icon-192.png","icon-512.png","apple-touch-icon.png","fiche.enc"];
 
 self.addEventListener('install', e => {
     e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS)));

@@ -10,7 +10,7 @@
 <title>Fiche de personnage</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   html, body { height: 100%; margin: 0; }
   body { background: #1a252f; color: #ecf0f1; font-family: Roboto, Arial, sans-serif; display: flex; align-items: center; justify-content: center; }
@@ -18,6 +18,7 @@
   img { width: 96px; height: 96px; border-radius: 50%; }
   h1 { font-size: 1.1rem; margin: 12px 0 4px; }
   p { font-size: 0.8rem; color: #bdc3c7; margin: 0 0 14px; }
+  input[type=text] { width: 100%; box-sizing: border-box; padding: 9px 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #33485c; background: #1d2a36; color: #95a5a6; font-size: 0.9rem; text-align: center; }
   input[type=password] { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 8px; border: 1px solid #4a5f73; background: #22313f; color: #fff; font-size: 1rem; }
   button { width: 100%; margin-top: 10px; padding: 11px; border: none; border-radius: 8px; background: #1e8449; color: #fff; font-weight: 800; font-size: 1rem; cursor: pointer; }
   button:disabled { opacity: 0.6; cursor: default; }
@@ -30,8 +31,9 @@
   <img src="icon-192.png" alt="">
   <h1>Fiche de personnage</h1>
   <p>Accès réservé. Saisis la phrase de passe fournie.</p>
-  <form id="f" autocomplete="off">
-    <input type="password" id="mdp" placeholder="Phrase de passe" aria-label="Phrase de passe" autofocus>
+  <form id="f" method="post" action="#" autocomplete="on">
+    <input type="text" id="user" name="username" value="Fiche" autocomplete="username" readonly aria-label="Nom d'utilisateur">
+    <input type="password" id="mdp" name="password" placeholder="Phrase de passe" autocomplete="current-password" aria-label="Phrase de passe" autofocus>
     <label><input type="checkbox" id="souvenir" checked> Se souvenir sur cet appareil</label>
     <button type="submit" id="ok">Ouvrir la fiche</button>
   </form>
@@ -60,6 +62,8 @@
     try {
       var html = await dechiffrer(phrase);
       if (retenir) { try { localStorage.setItem(CLE, phrase); } catch (e) {} }
+      // Propose d'enregistrer la phrase dans le gestionnaire de mots de passe du navigateur / du téléphone
+      try { if (window.PasswordCredential && navigator.credentials) await navigator.credentials.store(new PasswordCredential({ id: 'Fiche', name: 'Fiche de personnage', password: phrase })); } catch (e) {}
       document.open(); document.write(html); document.close();
     } catch (e) {
       ok.disabled = false;
