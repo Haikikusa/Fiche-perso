@@ -1,5 +1,5 @@
-// Généré par tools/build-pwa.js, version 20261020124225
-const VERSION = '20261020124225';
+// Généré par tools/build-pwa.js, version 20261020143723
+const VERSION = '20261020143723';
 const CACHE = 'fiche-perso-' + VERSION;
 const FICHIERS = ["./","index.html","manifest.webmanifest","icon-192.png","icon-512.png","apple-touch-icon.png","fiche.enc"];
 
